@@ -1,9 +1,12 @@
-Script started on 2021-01-13 19:06:00-05:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="118" LINES="44"]
+Script started on 2021-01-13 19:15:19-05:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="118" LINES="44"]
 ]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Project1[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Project1[00m$ make
-gcc -Wall simple_c_program.c -o simple_c_program
-]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Project1[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Project1[00m$ ./simple_c_program 
+gcc -std=c99 -Wall simple_c_program.c -o simple_c_program
+]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Project1[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Project1[00m$ make run
+./simple_c_program
 Hello, World!
+]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Project1[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Project1[00m$ make clean
+rm simple_c_program
 ]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Project1[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Project1[00m$ exit
 exit
 
-Script done on 2021-01-13 19:06:05-05:00 [COMMAND_EXIT_CODE="0"]
+Script done on 2021-01-13 19:15:25-05:00 [COMMAND_EXIT_CODE="0"]
