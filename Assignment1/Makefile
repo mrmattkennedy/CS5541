@@ -1,7 +1,7 @@
-all: simple_c_program.c
-	gcc -std=c99 -Wall simple_c_program.c -o simple_c_program
+all: number_demonstrations.c
+	gcc -std=c99 -Wall number_demonstrations.c -o number_demonstrations
 
 run:
-	./simple_c_program
+	./number_demonstrations
 clean:
-	rm simple_c_program
+	rm number_demonstrations
