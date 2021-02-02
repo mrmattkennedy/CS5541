@@ -1,0 +1,36 @@
+Script started on 2021-02-02 14:18:56-05:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="80" LINES="24"]
+]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Assignment2[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Assignment2[00m$ make
+gcc -std=c99 -Wall number_demonstrations.c -o number_demonstrations
+[01m[Knumber_demonstrations.c:[m[K In function ‘[01m[Kmain[m[K’:
+[01m[Knumber_demonstrations.c:32:11:[m[K [01;35m[Kwarning: [m[Kinteger overflow in expression of type ‘[01m[Kint[m[K’ results in ‘[01m[K-1794967296[m[K’ [[01;35m[K-Woverflow[m[K]
+   32 |  e = 50000[01;35m[K*[m[K50000;
+      |           [01;35m[K^[m[K
+[01m[Knumber_demonstrations.c:34:11:[m[K [01;35m[Kwarning: [m[Kinteger overflow in expression of type ‘[01m[Kint[m[K’ results in ‘[01m[K-694967296[m[K’ [[01;35m[K-Woverflow[m[K]
+   34 |  e = 60000[01;35m[K*[m[K60000;
+      |           [01;35m[K^[m[K
+[01m[Knumber_demonstrations.c:36:11:[m[K [01;35m[Kwarning: [m[Kinteger overflow in expression of type ‘[01m[Kint[m[K’ results in ‘[01m[K605032704[m[K’ [[01;35m[K-Woverflow[m[K]
+   36 |  e = 70000[01;35m[K*[m[K70000;
+      |           [01;35m[K^[m[K
+]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Assignment2[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Assignment2[00m$ make ruin[K[Kn
+./number_demonstrations
+Problem 1: 2.5000000000
+Problem 2: -0.1000000015
+Problem 3.1: 0.0000000000
+Problem 3.2: 0.3333333333
+Problem 4.1: 9999999.3399999999
+Problem 4.2: 9999999.0000000000
+Problem 5.1: 900000000
+Problem 5.2: 1600000000
+Problem 5.3: -1794967296
+Problem 5.4: -694967296
+Problem 5.5: 605032704
+Problem 6.1: 100000002004087734272.000000
+Problem 6.2: 100000002004087734272.000000
+Problem 6.3: 103500002601996386304.000000
+Problem 6.4: 100000002004087734272.000000
+]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Assignment2[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Assignment2[00m$ make clean
+rm number_demonstrations
+]0;matt@matt-Virtual-Machine: ~/Documents/CS5541/Assignment2[01;32mmatt@matt-Virtual-Machine[00m:[01;34m~/Documents/CS5541/Assignment2[00m$ exit
+exit
+
+Script done on 2021-02-02 14:19:10-05:00 [COMMAND_EXIT_CODE="0"]
