@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["-s", "5", "-E", "2", "-b", "4", "-t", "wmucachelab2\\traces\\dave.trace"],
+            "args": ["-v", "-s", "1", "-E", "2", "-b", "1", "-t", "wmucachelab2\\traces\\trans.trace"],
             "console": "integratedTerminal"
         }
     ]
