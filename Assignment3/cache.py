@@ -77,7 +77,7 @@ class CacheSim:
                         line['order'] += 1
                     
                     print(trace)
-                print(hits, misses, evictions)
+        print(hits, misses, evictions)
                         
 
 
