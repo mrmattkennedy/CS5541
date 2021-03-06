@@ -16,7 +16,7 @@ class CacheSim:
         self.cache (dict): Cache representation, holds cache data
         self.tag_bit_size: # of bits in each tag
         self.stats (dict): Keeps track of # of hits/misses/evictions
-        
+
     """
 
     def __init__(self, args):
@@ -51,10 +51,8 @@ class CacheSim:
                         trace_split = trace[2:].split(',')
                         addr = int(trace_split[0].replace(' ', ''), base=16)
                         addr = bin(addr)[2:].zfill(self.max_addr_size)
-                        size = int(trace_split[1].replace(' ', ''), base=10)
 
                         #Get tag/set/offset bits
-                        offset_bits = addr[-self.offset_bit_size:]
                         set_bit_start = -self.offset_bit_size - self.set_bit_size
                         set_bit_end = -self.offset_bit_size
                         set_bits = addr[set_bit_start:set_bit_end]
@@ -95,7 +93,7 @@ class CacheSim:
             if line['tag'] == tag_bits and line['v'] == 1:
                 self.stats['hits'] += 1
                 return 'hit'
-        
+
         #See if any invalid bits, take those
         self.stats['misses'] += 1
         for line in self.cache[set_base_10]:
@@ -137,7 +135,7 @@ class CacheSim:
 
             for _ in range(self.num_lines):
                 self.cache[cache_set].append({'tag': None, 'v': 0, 'order': -1})
-       
+
         #Also need to define sizes for tag/set/offset bits
         self.tag_bit_size = self.max_addr_size - self.set_bit_size - self.offset_bit_size
 
@@ -158,7 +156,7 @@ class CacheSim:
             #Loop through each line (trace) in the file
             for trace in f:
                 trace = trace.rstrip('\n').strip()
-                
+
                 #If the line is not an empty string, process it
                 if trace:
                     #Get address, convert to binary, append the length to the addresses list
@@ -166,7 +164,7 @@ class CacheSim:
                     addr = int(trace_split[0].replace(' ', ''), base=16)
                     addr = bin(addr)[2:]
                     addresses.append(len(str(addr)))
-        
+
         self.max_addr_size = max(addresses)
         assert self.max_addr_size - self.set_bit_size - self.offset_bit_size > 0, "Number of set bits + number of offset bits needs to be less than {}, which is the number of bits in each address provided in this trace)".format(self.max_addr_size)
         print(self.max_addr_size, self.set_bit_size, self.offset_bit_size)
@@ -174,7 +172,7 @@ class CacheSim:
 
 
     def check_args(self, args):
-        """Parses command line arguments. 
+        """Parses command line arguments.
         Starts by checking for help flag. If present, print and exit.
         Next, checks for verbose flag, sets verbose mode
         Next, verifies -s, -E, and -b flags are present, and the arg following each flag is an int
@@ -191,7 +189,7 @@ class CacheSim:
         #If h flag, don't care about anything else, just print help
         if "-hv" in args or "-h" in args or "-vh" in args:
             self.print_help_exit(exit_flag=True)
-        
+
         self.verbose = False
         if "-hv" in args or "-v" in args or "-vh" in args:
             self.verbose = True
@@ -200,26 +198,26 @@ class CacheSim:
         assert "-s" in args, self.print_help_exit(exit_flag=True)
         assert "-E" in args, self.print_help_exit(exit_flag=True)
         assert "-b" in args, self.print_help_exit(exit_flag=True)
-        
+
         #Find the number of each flag
         num_set_bits = args[args.index("-s")+1]
         num_lines = args[args.index("-E")+1]
         num_block_bits = args[args.index("-b")+1]
-        
+
         #Verify each flag is an int
         try:
             self.set_bit_size = int(num_set_bits)
             self.num_lines = int(num_lines)
             self.offset_bit_size = int(num_block_bits)
         except ValueError:
-            print('Number of set bits, number of lines, and number of block offset bits must be integers')
+            print('Number of set bits, lines, block offfset bits must be integers')
             self.print_help_exit(exit_flag=True)
-        
+
 
         #Read trace file
         assert "-t" in args, self.print_help_exit(exit_flag=True)
         self.trace_path = args[args.index("-t")+1]
-        assert os.path.exists(self.trace_path), self.print_help_exit(exit_flag=True), "Trace file path needs to be a valid path"
+        assert os.path.exists(self.trace_path), self.print_help_exit(exit_flag=True)
 
 
 
@@ -244,7 +242,7 @@ Usage: ./cache.py [-hv] -s <s> -E <E> -b <b> -t <tracefile>
 -t <tracefile>: Name of the valgrind trace to replay""")
 
         if exit_flag:
-            exit()
+            sys.exit()
 
 
 
