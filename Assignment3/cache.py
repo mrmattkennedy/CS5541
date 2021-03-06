@@ -23,12 +23,14 @@ class CacheSim:
                 
                 #If the line is not an empty string, process it
                 if trace:
-                    print('here2')
+                    print(trace)
                     #Get (op)eration, (addr)ess, and size from each line
                     op = trace[0]
                     trace_split = trace[2:].split(',')
                     addr = int(trace_split[0].replace(' ', ''), base=16)
-                    addr = '{0:064b}'.format(addr)
+                    addr = bin(addr)[2:]
+#                    addr = '{0:064b}'.format(addr)
+                    print(addr)
                     size = int(trace_split[1].replace(' ', ''), base=10)
 
                     #Get tag/set/offset bits
@@ -54,7 +56,6 @@ class CacheSim:
                     #See if any invalid bits, take those
                     misses += 1
                     continueFlag = False
-                    print('miss')
                     for line in self.cache[set_base_10]:
                         if line['v'] == 0:
                             line['tag'] = tag_bits
@@ -76,7 +77,6 @@ class CacheSim:
                     for line in self.cache[set_base_10]:
                         line['order'] += 1
                     
-                    print(trace)
         print(hits, misses, evictions)
                         
 
