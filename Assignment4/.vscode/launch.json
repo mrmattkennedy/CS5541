@@ -9,8 +9,8 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["-s", "7", "-E", "11", "-b", "3", "-t", "wmucachelab2\\traces\\long.trace"],
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": ["-f", "input.txt", "-l", "I", "-a", "B"]
         }
     ]
 }

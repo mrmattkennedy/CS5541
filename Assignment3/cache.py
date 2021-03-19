@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+"""Purpose of this module is to simulate a cache.
+Course is CS 5800
+Module is meant as a stand alone, not meant to be imported anywhere
+The shebang may need to be changed from python3 to just python, depending on your system
+
+Example:
+    python3 cache.py -v -s 2 -E 4 -b 2 -t wmucachelab2/traces/long.trace (path may vary depending on system)
+    ./cache.py -v -s 2 -E 4 -b 2 -t wmucachelab2/traces/long.trace (path may vary depending on system)
+"""
+
 import sys
 import os
 
@@ -20,6 +30,20 @@ class CacheSim:
     """
 
     def __init__(self, args):
+        """Performs the necessary method calls in order
+        Starts by checking passed in arguments
+        Next, gets max address size from the trace file specified
+        Next, creates the cache object
+        Lastly, reads the trace file and performs the cache simulation
+
+        Args:
+            args (list): Command line arguments passed in 
+
+        Returns:
+            None
+
+        """
+
         self.check_args(args)
         self.get_max_addr_size()
         self.create_cache()
@@ -33,9 +57,12 @@ class CacheSim:
 
         Args:
             None
+
         Returns:
             None
+
         """
+
         self.stats = {'hits': 0, 'misses': 0, 'evictions': 0}
 
         with open(self.trace_path, 'r') as f:
@@ -83,6 +110,7 @@ class CacheSim:
             'hit' if hit found
             'miss' if miss with available empty spot, no eviction required
             'eviction' if miss and eviction required
+
         """
 
         #Perform cache operation(s)
@@ -120,12 +148,14 @@ class CacheSim:
     def create_cache(self):
         """Creates the cache using a dictionary containing a list of dictionaries
         Highest level dictionary is the sets, the list in each set contains the levels
-        Each level in the list contains a valid flag, a tag, and the order placed in for LIFO
+        Each level in the list contains a valid flag, a tag, and the order placed in for FIFO
 
         Args:
             None
+
         Returns:
             None
+
         """
 
         self.cache = {}
@@ -147,8 +177,10 @@ class CacheSim:
 
         Args:
             None
+
         Returns:
             None
+
         """
 
         addresses = []
@@ -167,7 +199,6 @@ class CacheSim:
 
         self.max_addr_size = max(addresses)
         assert self.max_addr_size - self.set_bit_size - self.offset_bit_size > 0, "Number of set bits + number of offset bits needs to be less than {}, which is the number of bits in each address provided in this trace)".format(self.max_addr_size)
-        print(self.max_addr_size, self.set_bit_size, self.offset_bit_size)
 
 
 
@@ -234,6 +265,8 @@ class CacheSim:
 
         print("""
 Usage: ./cache.py [-hv] -s <s> -E <E> -b <b> -t <tracefile>
+or
+python3 cache.py [-hv] -s <s> -E <E> -b <b> -t <tracefile>
 -h: Optional help flag that prints usage info
 -v: Optional verbose flag that displays trace info
 -s <s>: Number of set index bits (S = 2 s is the number of sets)
@@ -246,5 +279,6 @@ Usage: ./cache.py [-hv] -s <s> -E <E> -b <b> -t <tracefile>
 
 
 
+#If (for whatever reason) this module was imported, this code wouldn't run
 if __name__ == '__main__':
     CS = CacheSim(sys.argv)
