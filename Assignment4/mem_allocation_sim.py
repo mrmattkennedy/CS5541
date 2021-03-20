@@ -10,9 +10,11 @@ class MemAllocSim:
         self.create_list()
         first = self.myalloc(5)
         print(self.myalloc(5))
-        print(self.myalloc(5))
+        third = self.myalloc(5)
         print(self.myalloc(24))
         self.myfree(first)
+        self.myfree(third)
+        self.myalloc(6)
 
 
 

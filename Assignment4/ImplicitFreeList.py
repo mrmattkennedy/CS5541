@@ -15,14 +15,17 @@ class ImplicitFreeList:
 
 
     def myalloc(self, size):
-        payload_words = int(size / self.bytes_per_word) + math.ceil(size % self.bytes_per_word)
+        payload_words = int(size / self.bytes_per_word) 
+        if math.ceil(size % self.bytes_per_word) != 0:
+            payload_words += 1
+            
         header_node = self.headers.first_node
         while header_node:
 
             #If the node is free, and the size of the block is >= the size requested by user + 2 words for header/footer blocks
             if header_node.a == 1 and header_node.size >= payload_words:
                 #Check each available word in block for first aligned word to start
-                for word in range(header_node.addr, header_node.addr+header_node.size-(payload_words+2), 1):
+                for word in range(header_node.addr, header_node.addr+header_node.size-payload_words+1, 1):
                     if ((word+1)*self.bytes_per_word) % 8 == 0:
 
                         #Create data to store in header footer - first 31 bits are size, LSB is to indicate free or not
@@ -71,14 +74,32 @@ class ImplicitFreeList:
                 node.next_node = next_full_block
             node = node.next_node
 
-        #Step 3 - fill in empty space before start if possible
+        #Step 3 - organize linked list by address. Using a list to cheat for this singly linked list sort
+        nodes = []
+        node = self.headers.first_node
+        while node:
+            nodes.append(node)
+            node = node.next_node
+        
+        #Sort, then add back in
+        sorted_nodes = sorted(nodes, key=lambda x: x.addr, reverse=False)
+        self.headers.first_node = sorted_nodes[0]
+        current_node = self.headers.first_node
+        for node in sorted_nodes[1:]:
+            current_node.next_node = node
+            current_node = node
+        
+        current_node.next_node = None
+
+        #Step 4 - fill in empty space before start if possible
         if self.headers.first_node.addr >= 3:
             old_head = self.headers.first_node
             new_size = old_head.addr - 2
             self.headers.add_node(size=new_size, a=1, addr=0, force_start=True)
             self.headers.first_node.next_node = old_head
 
-        #Step 4 - fill in space between all nodes after first and before last
+
+        #Step 5 - fill in space between all nodes after first and before last
         node = self.headers.first_node
         while node.next_node:
             #Get difference between 2 headers. If there is a space greater than 3, add new block between
@@ -91,7 +112,7 @@ class ImplicitFreeList:
                 node.next_node = new_node
             node = node.next_node
 
-        #Step 5 - fill in space after last node
+        #Step 6 - fill in space after last node
         last_header = self.headers.first_node
         while last_header.next_node:
             last_header = last_header.next_node
@@ -135,6 +156,7 @@ class ImplicitFreeList:
         while node:
             print(node.addr, node.size, node.a)
             node = node.next_node
+        print('\n')
 
 
 if __name__ == '__main__':
