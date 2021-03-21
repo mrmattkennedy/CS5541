@@ -5,45 +5,65 @@ class ImplicitFreeList:
     def __init__(self):
         self.bytes_per_word = 4
         self.payload_string = '11111111111111111111111111111111'
-        self.heap = {}
-        for i in range(1000):
-            self.heap[i] = '{:032b}'.format(0)
+        self.heap_size = 1000
             
         self.headers = LinkedList()
         self.footers = LinkedList()
         
 
 
-    def myalloc(self, size):
+    def first_fit(self, size, ptr):
+        if not (ptr >= 0 and ptr <= 999):
+            return -2
+
         payload_words = int(size / self.bytes_per_word) 
         if math.ceil(size % self.bytes_per_word) != 0:
             payload_words += 1
+
+        heap_expandable = True
+        while heap_expandable: 
+            header_node = self.headers.first_node
+            while header_node:
+
+                #If the node is free, and the size of the block is >= the size requested by user + 2 words for header/footer blocks
+                if header_node.a == 1 and header_node.size >= payload_words:
+                    #Check each available word in block for first aligned word to start
+                    for word in range(header_node.addr, header_node.addr+header_node.size-payload_words+1, 1):
+                        if ((word+1)*self.bytes_per_word) % 8 == 0:
+
+                            #Create data to store in header footer - first 31 bits are size, LSB is to indicate free or not
+                            new_header = self.headers.add_node(size=payload_words, a=0, addr=word, ptr=ptr)
+                            new_footer = self.footers.add_node(size=payload_words, a=0, addr=word+payload_words+1, ptr=ptr)
+
+                            #Coalesce and return node addr
+                            self.coalesce()
+                            return ptr
+
+                header_node = header_node.next_node
             
-        header_node = self.headers.first_node
-        while header_node:
+            #Get last header in list
+            last_header = self.headers.first_node
+            while last_header.next_node:
+                last_header = last_header.next_node
 
-            #If the node is free, and the size of the block is >= the size requested by user + 2 words for header/footer blocks
-            if header_node.a == 1 and header_node.size >= payload_words:
-                #Check each available word in block for first aligned word to start
-                for word in range(header_node.addr, header_node.addr+header_node.size-payload_words+1, 1):
-                    if ((word+1)*self.bytes_per_word) % 8 == 0:
+            #If last header is free space, add only necessary amount with current header size
+            if last_header.a == 1:
+                heap_expandable = self.mysbrk(payload_words - last_header.size + 3)
+            #If not free space, add whatever is needed
+            else:
+                heap_expandable = self.mysbrk(payload_words + 2)
 
-                        #Create data to store in header footer - first 31 bits are size, LSB is to indicate free or not
-                        new_header = self.headers.add_node(size=payload_words, a=0, addr=word)
-                        new_footer = self.footers.add_node(size=payload_words, a=0, addr=word+payload_words+1)
+            #Coalesce
+            self.coalesce()
 
-                        #Coalesce and return node addr
-                        self.coalesce()
-                        return word
-
-            header_node = header_node.next_node
+        return -1
 
 
 
-    def myfree(self, addr):
+    def myfree(self, ptr):
         node = self.headers.first_node
-        if node.addr != addr:
-            while node.next_node and node.next_node.addr != addr:
+        if node.ptr != ptr:
+            while node.next_node and node.next_node.ptr != ptr:
                 node = node.next_node
             
             node.next_node = node.next_node.next_node
@@ -51,6 +71,13 @@ class ImplicitFreeList:
             self.headers.first_node = self.headers.first_node.next_node
         
         self.coalesce()
+
+
+    def mysbrk(self, size):
+        if self.heap_size + size <= 100000:
+            self.heap_size += size
+            return True
+        return False
         
 
 
@@ -118,14 +145,13 @@ class ImplicitFreeList:
             last_header = last_header.next_node
         
         #Get remaining space
-        heap_max_addr = list(self.heap.keys())[-1]
-        if heap_max_addr - last_header.addr + last_header.size + 1 >=3:
+        heap_max_addr = self.heap_size - 1
+        if heap_max_addr - (last_header.addr + last_header.size + 1) >=3:
             new_addr = last_header.addr + last_header.size + 2 #New header addr is last header address + size + 2 (footer + 1 past footer)
             new_size = heap_max_addr - new_addr - 1 #Want to go until 998 for payload, so size is max heap address - new header address - 1 for footer
             self.headers.add_node(size=new_size, a=1, addr=new_addr)
 
-        #Step 6 - add footer nodes in afterwords
-        last_header = last_header.next_node
+        #Step 7 - add footer nodes in afterwords
         matching_footer_addr = last_header.addr + last_header.size + 1
         matching_footer_size = last_header.size
         self.footers.add_node(size=matching_footer_size, a=last_header.a, addr=matching_footer_addr, force_start=True)
@@ -145,6 +171,7 @@ class ImplicitFreeList:
             #Increment previous_header_checked down an element in the single linked list
             previous_header_checked = last_header
 
+        print("Heap size: {}".format(self.heap_size))
         print('Headers:')
         node = self.headers.first_node
         while node:
@@ -157,6 +184,7 @@ class ImplicitFreeList:
             print(node.addr, node.size, node.a)
             node = node.next_node
         print('\n')
+        
 
 
 if __name__ == '__main__':

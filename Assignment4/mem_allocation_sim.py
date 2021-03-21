@@ -8,21 +8,33 @@ class MemAllocSim:
     def __init__(self, args):
         self.check_args(args)
         self.create_list()
-        first = self.myalloc(5)
-        print(self.myalloc(5))
-        third = self.myalloc(5)
-        print(self.myalloc(24))
-        self.myfree(first)
+        self.current_pointers = []
+        self.myalloc(5, 0)
+        self.myalloc(50, 1)
+        third = self.myalloc(999, 5)
+        fourth = self.myalloc(50000, 10)
         self.myfree(third)
-        self.myalloc(6)
+        self.myfree(fourth)
+        fourth = self.myalloc(350000, 11)
+        fifth = self.myalloc(350000, 12)
+        
+
+
+    def myalloc(self, size, ptr):
+        result = self.wordList.first_fit(size, ptr)
+        if result == -2:
+            print("Reference address provided in last argument must be between 0 and 999")
+        elif result == -1:
+            print("Heap space in excess of 100,000 words with this call, stopping simulator")
+            sys.exit()
+        else:
+            self.current_pointers.append(result)
+            return result
 
 
 
-    def myalloc(self, size):
-        return self.wordList.myalloc(size)
-
-    def myfree(self, addr):
-        self.wordList.myfree(addr)
+    def myfree(self, ptr):
+        self.wordList.myfree(ptr)
     
     def create_list(self):
         if self.list_type == 'I':

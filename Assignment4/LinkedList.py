@@ -2,8 +2,8 @@ class LinkedList:
     def __init__(self):
         self.first_node = None
 
-    def add_node(self, size, a, addr, force_start=False):
-        new_node = Node(size, a, addr)
+    def add_node(self, size, a, addr, ptr=None, force_start=False):
+        new_node = Node(size, a, addr, ptr)
 
         if force_start:
             self.first_node = new_node
@@ -32,11 +32,12 @@ class LinkedList:
 
 
 class Node:
-    def __init__(self, size, a, addr):
+    def __init__(self, size, a, addr, ptr=None):
         self.size = size
         self.a = a
         self.next_node = None
         self.addr = addr
+        self.ptr = ptr
 
 if __name__ == '__main__':
     pass
