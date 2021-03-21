@@ -6,25 +6,44 @@ from ImplicitFreeList import ImplicitFreeList
 
 class MemAllocSim:
     def __init__(self, args):
+        
         self.check_args(args)
         self.create_list()
         self.current_pointers = []
+        self.read_file()
+        '''
         self.myalloc(5, 0)
-        self.myalloc(50, 1)
-        third = self.myalloc(999, 5)
-        fourth = self.myalloc(50000, 10)
-        self.myfree(third)
-        self.myfree(fourth)
-        fourth = self.myalloc(350000, 11)
-        fifth = self.myalloc(350000, 12)
+        two = self.myalloc(500, 1)
+        self.myalloc(40, 3)
+        four = self.myalloc(100, 4)
+        five = self.myalloc(10, 5)
+
+        self.myfree(two)
+        self.myfree(four)
+
+        four = self.myalloc(50, 4)
+        self.myfree(four)
+
+        self.myrealloc(20, five, 5)
+        '''
         
 
 
     def myalloc(self, size, ptr):
-        result = self.wordList.first_fit(size, ptr)
-        if result == -2:
+        if not (ptr >= 0 and ptr <= 999):
             print("Reference address provided in last argument must be between 0 and 999")
-        elif result == -1:
+            return
+
+        if ptr in self.current_pointers:
+            print("Pointer requested must not already exist")
+            return
+
+        if self.fit_type == 'F':
+            result = self.wordList.first_fit(size, ptr)
+        elif self.fit_type == 'B':
+            result = self.wordList.best_fit(size, ptr)
+
+        if result == -1:
             print("Heap space in excess of 100,000 words with this call, stopping simulator")
             sys.exit()
         else:
@@ -34,7 +53,57 @@ class MemAllocSim:
 
 
     def myfree(self, ptr):
-        self.wordList.myfree(ptr)
+        result = self.wordList.myfree(ptr)
+        if result == 1:
+            self.current_pointers.remove(ptr)
+
+
+
+    def myrealloc(self, size, old_ptr, new_ptr):
+        if old_ptr not in self.current_pointers:
+            print("Pointer requested for resize must already exist")
+            return
+
+        self.myfree(old_ptr)
+
+        if not (new_ptr >= 0 and new_ptr <= 999):
+            print("Reference address provided in last argument must be between 0 and 999")
+            return
+
+        if new_ptr in self.current_pointers:
+            print("Pointer requested must not already exist")
+            return
+
+        if self.fit_type == 'F':
+            result = self.wordList.first_fit(size, new_ptr)
+        elif self.fit_type == 'B':
+            result = self.wordList.best_fit(size, new_ptr)
+
+        if result == -1:
+            print("Heap space in excess of 100,000 words with this call, stopping simulator")
+            sys.exit()
+        else:
+            self.current_pointers.append(result)
+            return result
+
+
+    def read_file(self):
+        with open(self.file_path, 'r') as f:
+            for line in f:
+                line = line.replace('\n', '').replace(' ', '')
+                line_args = line.split(',')
+                
+                print(line)
+                if line_args[0] == 'a':
+                    assert len(line_args) == 3, "alloc requests must have 3 parts: a, size, requested_pointer"
+                    self.myalloc(int(line_args[1]), int(line_args[2]))
+                elif line_args[0] == 'f':
+                    assert len(line_args) == 2, "free requests must have 2 parts: f, pointer_to_free"
+                    self.myfree(int(line_args[1]))
+                elif line_args[0] == 'r':
+                    assert len(line_args) == 4, "realloc requests must have 4 parts: r, new_size, old_ptr, new_ptr"
+                    self.myrealloc(int(line_args[1]), int(line_args[2]), int(line_args[3]))
+
     
     def create_list(self):
         if self.list_type == 'I':

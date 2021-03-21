@@ -1,7 +1,7 @@
 import math
 from LinkedList import LinkedList, Node
 
-class ImplicitFreeList:
+class ExplicitFreeList:
     def __init__(self):
         self.bytes_per_word = 4
         self.payload_string = '11111111111111111111111111111111'
