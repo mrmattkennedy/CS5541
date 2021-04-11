@@ -4,8 +4,10 @@ from LinkedList import LinkedList, Node
 class ExplicitFreeList:
     def __init__(self):
         self.bytes_per_word = 4
-        self.payload_string = '11111111111111111111111111111111'
         self.heap_size = 1000
+        #This feels like cheating, but I think it is necessary. In an explicit list, only free blocks are tracked. 
+        #So when a user passes in some arbitrary pointer to free a block, how do we know anything about the block, since we only track free blocks?
+        self.used_blocks = {}
             
         self.headers = LinkedList()
         self.footers = LinkedList()
@@ -27,13 +29,11 @@ class ExplicitFreeList:
                     #Check each available word in block for first aligned word to start
                     for word in range(header_node.addr, header_node.addr+header_node.size-payload_words+1, 1):
                         if ((word+1)*self.bytes_per_word) % 8 == 0:
-
-                            #Create data to store in header footer - first 31 bits are size, LSB is to indicate free or not
-                            new_header = self.headers.add_node(size=payload_words, a=0, addr=word, ptr=ptr)
-                            new_footer = self.footers.add_node(size=payload_words, a=0, addr=word+payload_words+1, ptr=ptr)
+                            
+                            self.used_blocks[ptr] = [word, payload_words]
 
                             #Coalesce and return node addr
-                            self.coalesce()
+                            self.coalesce(word, payload_words, header_node, False)
                             return ptr
 
                 header_node = header_node.next_node
@@ -53,7 +53,7 @@ class ExplicitFreeList:
             if heap_expandable:
                 new_addr = last_header.addr + last_header.size + 2
                 new_size = self.heap_size - new_addr - 2 #-2 for header/footer space
-                self.headers.add_node(size=new_size, a=1, addr=new_addr)
+                self.headers.add_node(size=new_size, a=1, addr=new_addr, prev=True)
 
             #Coalesce
             #self.coalesce()
@@ -78,21 +78,21 @@ class ExplicitFreeList:
                     #Check each available word in block for first aligned word to start
                     for word in range(header_node.addr, header_node.addr+header_node.size-payload_words+1, 1):
                         if ((word+1)*self.bytes_per_word) % 8 == 0:
-                            best_fit_addr[word] = (header_node.size) - (payload_words)
+                            best_fit_addr[word] = [(header_node.size) - (payload_words), header_node]
                             break
                             
 
                 header_node = header_node.next_node
             
             if len(best_fit_addr.keys()) > 0:
-                best_fit_word = min(best_fit_addr, key=best_fit_addr.get)
+                sorted_fits = sorted(best_fit_addr.items(), key=lambda e: e[1][0])
 
+                best_fit_word = sorted_fits[0][0]
                 #Create data to store in header footer - first 31 bits are size, LSB is to indicate free or not
-                new_header = self.headers.add_node(size=payload_words, a=0, addr=best_fit_word, ptr=ptr)
-                new_footer = self.footers.add_node(size=payload_words, a=0, addr=best_fit_word+payload_words+1, ptr=ptr)
+                self.used_blocks[ptr] = [best_fit_word, payload_words]
 
                 #Coalesce and return node addr
-                self.coalesce()
+                self.coalesce(best_fit_word, payload_words, sorted_fits[0][1][1], False)
                 return ptr
 
 
@@ -112,7 +112,7 @@ class ExplicitFreeList:
                 if heap_expandable:
                     new_addr = last_header.addr + last_header.size + 2
                     new_size = self.heap_size - new_addr - 2 #-2 for header/footer space
-                    self.headers.add_node(size=new_size, a=1, addr=new_addr)
+                    self.headers.add_node(size=new_size, a=1, addr=new_addr, prev=True)
             
 
             #Coalesce
@@ -123,18 +123,10 @@ class ExplicitFreeList:
 
 
     def myfree(self, ptr):
-        node = self.headers.first_node
-        if node.ptr != ptr:
-            while node.next_node and node.next_node.ptr != ptr:
-                node = node.next_node
+        assert ptr in self.used_blocks
+        self.headers.add_node(size=self.used_blocks[ptr][1], a=1, addr=self.used_blocks[ptr][0], prev=True)
             
-            if node.next_node:
-                node.next_node = node.next_node.next_node
-            else:
-                node = None
-        else:
-            self.headers.first_node = self.headers.first_node.next_node
-        
+        #Create new free block here, then coalesce
         self.coalesce()
         return 1
 
@@ -147,76 +139,61 @@ class ExplicitFreeList:
 
 
 
-    def coalesce(self):
+    def coalesce(self, new_block_start=None, new_block_size=None, header_to_resize=None, free=False):
         if not self.headers.first_node:
             self.headers.add_node(addr=0, a=1, size=self.heap_size-2)
             return 
 
-        #Step 1 - remove all first blocks in header until first block is full
-        while self.headers.first_node.a == 1:
-            self.headers.first_node = self.headers.first_node.next_node
+        #Replace free block that was taken
+        if new_block_size and new_block_start and header_to_resize:
+            new_header_start = new_block_start + new_block_size + 2
+            remaining_header_space = (header_to_resize.addr + header_to_resize.size + 1) - new_header_start - 1
+            if remaining_header_space >= 2:
+                header_to_resize.addr = new_header_start
+                header_to_resize.size = remaining_header_space
 
-        #Step 2 - go through each header, delete all free blocks
-        node = self.headers.first_node
-        while node and node.next_node:
-            if node.next_node.a == 1:
-                next_full_block = node.next_node
-                while next_full_block and next_full_block.a == 1:
-                    next_full_block = next_full_block.next_node
-                node.next_node = next_full_block
-            node = node.next_node
-
-        #Step 3 - organize linked list by address. Using a list to cheat for this singly linked list sort
+        #Check if any free blocks directly adjacent, combine into one block
+        nodes_to_change = True
         nodes = []
         node = self.headers.first_node
         while node:
             nodes.append(node)
             node = node.next_node
-        
-        #Sort, then add back in
-        sorted_nodes = sorted(nodes, key=lambda x: x.addr, reverse=False)
-        self.headers.first_node = sorted_nodes[0]
-        current_node = self.headers.first_node
-        for node in sorted_nodes[1:]:
-            current_node.next_node = node
-            current_node = node
-        
-        current_node.next_node = None
 
-        #Step 4 - fill in empty space before start if possible
-        if self.headers.first_node.addr >= 3:
-            old_head = self.headers.first_node
-            new_size = old_head.addr - 2
-            self.headers.add_node(size=new_size, a=1, addr=0, force_start=True)
-            self.headers.first_node.next_node = old_head
+        while nodes_to_change:
+            #Create list of current nodes
+            nodes_to_change = False
+            
 
+            if len(nodes) == 1: break
+            for x, node1 in enumerate(nodes[:-1]):
+                for node2 in nodes[x+1:]:
+                    #Combine
+                    if (node1.addr + node1.size + 2 == node2.addr):
+                        start_address = node1.addr
+                        size = node1.size + node2.size + 2
+                        node2.addr = start_address
+                        node2.size = size
+                        node2.prev_node = node1.prev_node
+                        nodes.remove(node1)
+                        nodes_to_change = True
 
-        #Step 5 - fill in space between all nodes after first and before last
-        node = self.headers.first_node
-        while node.next_node:
-            #Get difference between 2 headers. If there is a space greater than 3, add new block between
-            header_diff = node.next_node.addr - (node.addr + node.size + 1)
-            if header_diff > 3:
-                new_addr = node.addr + node.size + 2 #New header addr is previous start (addr) + size + 2, 1 for footer, 1 more for next block after footer
-                new_size = node.next_node.addr - new_addr - 2 #Difference between following node start, new start, and 2 more for header/footer
-                new_node = Node(size=new_size, a=1, addr=new_addr)
-                new_node.next_node = node.next_node
-                node.next_node = new_node
-            node = node.next_node
+                    elif (node2.addr + node2.size + 2 == node1.addr):
+                        start_address = node2.addr
+                        size = node1.size + node2.size + 2
+                        node1.addr = start_address
+                        node1.size = size
+                        node1.prev_node = node2.prev_node
+                        nodes.remove(node2)
+                        nodes_to_change = True
 
-        '''
-        #Step 6 - fill in space after last node
-        last_header = self.headers.first_node
-        while last_header.next_node:
-            last_header = last_header.next_node
-        
-        #Get remaining space
-        heap_max_addr = self.heap_size - 1
-        if heap_max_addr - (last_header.addr + last_header.size + 1) >=3:
-            new_addr = last_header.addr + last_header.size + 2 #New header addr is last header address + size + 2 (footer + 1 past footer)
-            new_size = heap_max_addr - new_addr - 1 #Want to go until 998 for payload, so size is max heap address - new header address - 1 for footer
-            self.headers.add_node(size=new_size, a=1, addr=new_addr)
-        '''
+        self.headers.first_node = None
+        self.headers.first_node = nodes[0]
+        self.headers.first_node.next_node = None
+        self.headers.first_node.prev_node = None
+        for node in nodes[1:]:
+            self.headers.add_node(addr=node.addr, a=1, size=node.size, prev=True)
+                
 
         #Step 6 - sbrk down space after last node
         last_header = self.headers.first_node
@@ -248,6 +225,7 @@ class ExplicitFreeList:
             #Increment previous_header_checked down an element in the single linked list
             previous_header_checked = last_header
 
+        '''
         print("Heap size: {}".format(self.heap_size))
         print('Headers:')
         node = self.headers.first_node
@@ -261,6 +239,7 @@ class ExplicitFreeList:
             print(node.addr, node.size, node.a)
             node = node.next_node
         print('\n')
+        '''
         
 
 

@@ -4,7 +4,6 @@ from LinkedList import LinkedList, Node
 class ImplicitFreeList:
     def __init__(self):
         self.bytes_per_word = 4
-        self.payload_string = '11111111111111111111111111111111'
         self.heap_size = 1000
             
         self.headers = LinkedList()
@@ -184,7 +183,7 @@ class ImplicitFreeList:
         current_node.next_node = None
 
         #Step 4 - fill in empty space before start if possible
-        if self.headers.first_node.addr >= 3:
+        if self.headers.first_node.addr >= 2:
             old_head = self.headers.first_node
             new_size = old_head.addr - 2
             self.headers.add_node(size=new_size, a=1, addr=0, force_start=True)
@@ -196,7 +195,7 @@ class ImplicitFreeList:
         while node.next_node:
             #Get difference between 2 headers. If there is a space greater than 3, add new block between
             header_diff = node.next_node.addr - (node.addr + node.size + 1)
-            if header_diff > 3:
+            if header_diff >= 3:
                 new_addr = node.addr + node.size + 2 #New header addr is previous start (addr) + size + 2, 1 for footer, 1 more for next block after footer
                 new_size = node.next_node.addr - new_addr - 2 #Difference between following node start, new start, and 2 more for header/footer
                 new_node = Node(size=new_size, a=1, addr=new_addr)
@@ -248,6 +247,7 @@ class ImplicitFreeList:
             #Increment previous_header_checked down an element in the single linked list
             previous_header_checked = last_header
 
+        '''
         print("Heap size: {}".format(self.heap_size))
         print('Headers:')
         node = self.headers.first_node
@@ -261,7 +261,31 @@ class ImplicitFreeList:
             print(node.addr, node.size, node.a)
             node = node.next_node
         print('\n')
+        '''
         
+
+
+
+    def output(self):
+        with open("output.txt", "w") as f:
+            for i in range(self.heap_size):
+                line = '{}, '.format(i)
+                node = self.headers.first_node
+                while node:
+                    if node.addr == i:
+                        line += "0x{}{}".format(format(node.size,"07x"), node.a)
+                        break
+                    node = node.next_node
+                
+                node = self.footers.first_node
+                while node:
+                    if node.addr == i:
+                        line += "0x{}{}".format(format(node.size,"07x"), node.a)
+                        break
+                    node = node.next_node
+                
+                f.write(line)
+                f.write('\n')
 
 
 if __name__ == '__main__':

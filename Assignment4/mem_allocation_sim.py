@@ -3,30 +3,16 @@
 import os
 import sys
 from ImplicitFreeList import ImplicitFreeList
+from ExplicitFreeList import ExplicitFreeList
 
 class MemAllocSim:
     def __init__(self, args):
-        
         self.check_args(args)
         self.create_list()
         self.current_pointers = []
         self.read_file()
-        '''
-        self.myalloc(5, 0)
-        two = self.myalloc(500, 1)
-        self.myalloc(40, 3)
-        four = self.myalloc(100, 4)
-        five = self.myalloc(10, 5)
-
-        self.myfree(two)
-        self.myfree(four)
-
-        four = self.myalloc(50, 4)
-        self.myfree(four)
-
-        self.myrealloc(20, five, 5)
-        '''
-        
+        self.wordList.output()
+     
 
 
     def myalloc(self, size, ptr):
@@ -93,7 +79,7 @@ class MemAllocSim:
                 line = line.replace('\n', '').replace(' ', '')
                 line_args = line.split(',')
                 
-                print(line)
+                #print(line)
                 if line_args[0] == 'a':
                     assert len(line_args) == 3, "alloc requests must have 3 parts: a, size, requested_pointer"
                     self.myalloc(int(line_args[1]), int(line_args[2]))
@@ -108,6 +94,11 @@ class MemAllocSim:
     def create_list(self):
         if self.list_type == 'I':
             self.wordList = ImplicitFreeList()
+            self.wordList.headers.add_node(size=998, a=1, addr=0)
+            self.wordList.footers.add_node(size=998, a=1, addr=999)
+
+        elif self.list_type == 'E':
+            self.wordList = ExplicitFreeList()
             self.wordList.headers.add_node(size=998, a=1, addr=0)
             self.wordList.footers.add_node(size=998, a=1, addr=999)
 

@@ -2,7 +2,7 @@ class LinkedList:
     def __init__(self):
         self.first_node = None
 
-    def add_node(self, size, a, addr, ptr=None, force_start=False):
+    def add_node(self, size, a, addr, ptr=None, force_start=False, prev=False):
         new_node = Node(size, a, addr, ptr)
 
         if force_start:
@@ -14,6 +14,8 @@ class LinkedList:
                 while last_node.next_node:
                     last_node = last_node.next_node
                 last_node.next_node = new_node
+                if prev:
+                    new_node.prev_node = last_node
             except AttributeError:
                 self.first_node = new_node
 
@@ -36,6 +38,7 @@ class Node:
         self.size = size
         self.a = a
         self.next_node = None
+        self.prev_node = None
         self.addr = addr
         self.ptr = ptr
 
