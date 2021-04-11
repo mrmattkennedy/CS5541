@@ -2,7 +2,28 @@ import math
 from LinkedList import LinkedList, Node
 
 class ExplicitFreeList:
+    """Class to use Explicit Free List for memory allocation simulator
+
+    Attributes:
+        self.headers (LinkedList): LinkedList of header nodes
+        self.footers (LinkedList): LinkedList of footer nodes
+        self.heap_size (int): Keeps track of heap size
+        self.bytes_per_word (int): Used for double world alignment and calculating payload size
+        self.used_blocks (dict): Used for free method
+
+    """
+
     def __init__(self):
+        """Performs setup for Explicit Free List
+        Sets bytes per word and initial heap size, as well as headers and footers list
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
         self.bytes_per_word = 4
         self.heap_size = 1000
         #This feels like cheating, but I think it is necessary. In an explicit list, only free blocks are tracked. 
@@ -15,6 +36,22 @@ class ExplicitFreeList:
 
 
     def first_fit(self, size, ptr):
+        """First fit for explicit list
+        Starts by getting payload size from number of bytes (size)
+        Next, while the heap is expandable, goes through each block until one is found that can be allocated
+        Coalesce
+
+        If no block found, sbrk and redo
+
+        Args:
+            size (int): Size in bytes of block to create
+            ptr (int): ptr to new block
+            
+        Returns:
+            ptr if successfully allocated
+            -1 if not successfull (heap is too full)
+        """
+
         payload_words = int(size / self.bytes_per_word) 
         if math.ceil(size % self.bytes_per_word) != 0:
             payload_words += 1
@@ -33,7 +70,7 @@ class ExplicitFreeList:
                             self.used_blocks[ptr] = [word, payload_words]
 
                             #Coalesce and return node addr
-                            self.coalesce(word, payload_words, header_node, False)
+                            self.coalesce(word, payload_words, header_node)
                             return ptr
 
                 header_node = header_node.next_node
@@ -62,6 +99,23 @@ class ExplicitFreeList:
 
 
     def best_fit(self, size, ptr):
+        """Best fit for explicit list
+        Starts by getting payload size from number of bytes (size)
+        Next, while the heap is expandable, goes through each available free block. 
+        Stores each free block into a dict with the related node, then after, sorts these based on which one has the least space leftover after fill.
+        Coalesce
+
+        If no block found, sbrk and redo
+
+        Args:
+            size (int): Size in bytes of block to create
+            ptr (int): ptr to new block
+            
+        Returns:
+            ptr if successfully allocated
+            -1 if not successfull (heap is too full)
+        """
+
         payload_words = int(size / self.bytes_per_word) 
         if math.ceil(size % self.bytes_per_word) != 0:
             payload_words += 1
@@ -92,7 +146,7 @@ class ExplicitFreeList:
                 self.used_blocks[ptr] = [best_fit_word, payload_words]
 
                 #Coalesce and return node addr
-                self.coalesce(best_fit_word, payload_words, sorted_fits[0][1][1], False)
+                self.coalesce(best_fit_word, payload_words, sorted_fits[0][1][1])
                 return ptr
 
 
@@ -113,16 +167,21 @@ class ExplicitFreeList:
                     new_addr = last_header.addr + last_header.size + 2
                     new_size = self.heap_size - new_addr - 2 #-2 for header/footer space
                     self.headers.add_node(size=new_size, a=1, addr=new_addr, prev=True)
-            
-
-            #Coalesce
-            #self.coalesce()
 
         return -1
 
 
 
     def myfree(self, ptr):
+        """Frees a pointer from list of used blocks
+
+        Args:
+            ptr (int): Block to free
+            
+        Returns:
+            1 if successfully free'd
+        """
+
         assert ptr in self.used_blocks
         self.headers.add_node(size=self.used_blocks[ptr][1], a=1, addr=self.used_blocks[ptr][0], prev=True)
             
@@ -132,6 +191,15 @@ class ExplicitFreeList:
 
 
     def mysbrk(self, size):
+        """Changes size of heap
+
+        Args:
+            size (int): How much to change heap by (can be negative or positive)
+            
+        Returns:
+            True if successfully changed heap size, false if not.
+        """
+
         if self.heap_size + size <= 100000:
             self.heap_size += size
             return True
@@ -139,12 +207,27 @@ class ExplicitFreeList:
 
 
 
-    def coalesce(self, new_block_start=None, new_block_size=None, header_to_resize=None, free=False):
+    def coalesce(self, new_block_start=None, new_block_size=None, header_to_resize=None):
+        """Coalesces implicit list. Definitely not optimized, but it works as intended.
+        Step 1: Replace free block that was allocated in
+        Step 2: Combine adjacted free blocks
+        Step 3, sbrk down empty space after last used node
+        Step 4, add footers in to correspond
+
+        Args:
+            new_block_start (int): Start of used block that was just allocated, not required
+            new_block_size (int): Size of used block that was just allocated, not required
+            header_to_resize (Node): Free block that was allocated in, not required
+            
+        Returns:
+            None
+        """
+
         if not self.headers.first_node:
             self.headers.add_node(addr=0, a=1, size=self.heap_size-2)
             return 
 
-        #Replace free block that was taken
+        #Step 1: Replace free block that was taken
         if new_block_size and new_block_start and header_to_resize:
             new_header_start = new_block_start + new_block_size + 2
             remaining_header_space = (header_to_resize.addr + header_to_resize.size + 1) - new_header_start - 1
@@ -152,7 +235,7 @@ class ExplicitFreeList:
                 header_to_resize.addr = new_header_start
                 header_to_resize.size = remaining_header_space
 
-        #Check if any free blocks directly adjacent, combine into one block
+        #Step 2: Check if any free blocks directly adjacent, combine into one block
         nodes_to_change = True
         nodes = []
         node = self.headers.first_node
@@ -195,7 +278,7 @@ class ExplicitFreeList:
             self.headers.add_node(addr=node.addr, a=1, size=node.size, prev=True)
                 
 
-        #Step 6 - sbrk down space after last node
+        #Step 3 - sbrk down space after last node
         last_header = self.headers.first_node
         while last_header.next_node:
             last_header = last_header.next_node
@@ -205,7 +288,7 @@ class ExplicitFreeList:
         if heap_max_addr > (last_header.addr + last_header.size + 1):
             self.mysbrk(-(heap_max_addr - (last_header.addr + last_header.size + 1)))
 
-        #Step 7 - add footer nodes in afterwords
+        #Step 4 - add footer nodes in afterwords
         matching_footer_addr = last_header.addr + last_header.size + 1
         matching_footer_size = last_header.size
         self.footers.add_node(size=matching_footer_size, a=last_header.a, addr=matching_footer_addr, force_start=True)
@@ -225,21 +308,37 @@ class ExplicitFreeList:
             #Increment previous_header_checked down an element in the single linked list
             previous_header_checked = last_header
 
-        '''
-        print("Heap size: {}".format(self.heap_size))
-        print('Headers:')
-        node = self.headers.first_node
-        while node:
-            print(node.addr, node.size, node.a)
-            node = node.next_node
 
-        print('\nFooters:')
-        node = self.footers.first_node
-        while node:
-            print(node.addr, node.size, node.a)
-            node = node.next_node
-        print('\n')
-        '''
+
+    def output(self):
+        """Outputs heap to output.txt file
+
+        Args:
+            None
+            
+        Returns:
+            None
+        """
+
+        with open("output.txt", "w") as f:
+            for i in range(self.heap_size):
+                line = '{}, '.format(i)
+                node = self.headers.first_node
+                while node:
+                    if node.addr == i:
+                        line += "0x{}{}".format(format(node.size,"07x"), node.a)
+                        break
+                    node = node.next_node
+                
+                node = self.footers.first_node
+                while node:
+                    if node.addr == i:
+                        line += "0x{}{}".format(format(node.size,"07x"), node.a)
+                        break
+                    node = node.next_node
+                
+                f.write(line)
+                f.write('\n')
         
 
 

@@ -27,3 +27,6 @@ On your system, you may need to remove the very last character and change it to 
 The other way to run this is using the python command. For example, on my system, it is:
 python3 cache.py [-hv] -s <s> -E <E> -b <b> -t <path_to_trace>
 If you have the python3 command on your system, you shouldn't have issues. If you instead just use python, use that instead.
+
+
+

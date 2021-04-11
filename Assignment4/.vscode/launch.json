@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["-f", "input.txt", "-l", "I", "-a", "B"]
+            "args": ["-f", "examples/2.in", "-l", "I", "-a", "B"]
         }
     ]
 }
